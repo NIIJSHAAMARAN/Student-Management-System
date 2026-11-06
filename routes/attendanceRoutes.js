@@ -1,0 +1,10 @@
+const express = require("express");
+const router = express.Router();
+const attendanceController=require("../controllers/attendanceController");
+const authMiddleware = require("../middleware/authMiddleware");
+const roleMiddleware = require("../middleware/roleMiddleware");
+router.use(authMiddleware, roleMiddleware("admin", "trainer"));
+router.post("/mark", attendanceController.markAttendance);
+router.get("/", attendanceController.getAttendance);
+router.put("/:id", attendanceController.updateAttendance);
+module.exports = router;
