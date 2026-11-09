@@ -7,4 +7,8 @@ router.use(authMiddleware, roleMiddleware("admin", "trainer"));
 router.post("/mark", attendanceController.markAttendance);
 router.get("/", attendanceController.getAttendance);
 router.put("/:id", attendanceController.updateAttendance);
+router.get("/student/:studentId", attendanceController.getStudentReport);
+router.get("/batch/:batchId", attendanceController.getBatchReport);
+router.get("/batch/:batchId/aggregate", attendanceController.getBatchReportAggregate);
+router.get("/:id", attendanceController.getAttendanceById);
 module.exports = router;

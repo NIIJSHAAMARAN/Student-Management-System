@@ -57,11 +57,12 @@ exports.getCourses = async (req, res) => {
     });
   } catch (error) {
     handleError(error, res);
+  
   }
 };
 
 // GET /api/courses/:id
-exports.getCourseById = async (req, res) => {
+exports.getCourseById = async (req, res,next) => {
   try {
     const { id } = req.params;
 
@@ -77,7 +78,8 @@ exports.getCourseById = async (req, res) => {
 
     res.status(200).json({ success: true, data: course });
   } catch (error) {
-    handleError(error, res);
+    // handleError(error, res);
+     next(error);
   }
 };
 

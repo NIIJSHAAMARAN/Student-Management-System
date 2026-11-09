@@ -3,6 +3,7 @@ const Batch = require("../models/Batch");
 const Course = require("../models/Course");
 const Student = require("../models/Student");
 const User=require("../models/User");
+const Attendance=require("../models/Attendance");
 const BATCH_STATUSES = ["Upcoming", "Ongoing", "Completed", "Cancelled"];
 const handleError = (error, res) => {
   if (error.name === "ValidationError") {
@@ -131,60 +132,7 @@ exports.getBatchById = async (req, res) => {
   }
 };
 
-// exports.updateBatch = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     if (!mongoose.isValidObjectId(id)) {
-//       return res.status(400).json({ success: false, message: "Invalid batch ID" });
-//     }
 
-//     const batch = await Batch.findById(id);
-//     if (!batch) {
-//       return res.status(404).json({ success: false, message: "Batch not found" });
-//     }
-
-//     const allowedFields = ["batchName", "course","trainer", "startDate", "endDate", "status"]; 
-//     let changed = false;
-//     for (const field of allowedFields) {
-//       if (req.body[field] !== undefined) {
-//         batch[field] = req.body[field];
-//         changed = true;
-//       }
-//     }
-//     if (!changed) {
-//       return res.status(400).json({ success: false, message: "No valid fields to update" });
-//     }
-
-//     if (req.body.course !== undefined) {
-//       if (!mongoose.isValidObjectId(req.body.course)) {
-//         return res.status(400).json({ success: false, message: "Invalid course ID" });
-//       }
-//       if (!(await Course.exists({ _id: req.body.course }))) {
-//         return res.status(404).json({ success: false, message: "Course not found" });
-//       }
-//     }
-//     if (updates.trainer !== undefined) {
-//       if (!mongoose.isValidObjectId(updates.trainer)) {
-//         return res.status(400).json({ success: false, message: "Invalid trainer ID" });
-//       }
-//       if (!(await User.exists({ _id: updates.trainer, role: "trainer" }))) {
-//         return res.status(404).json({ success: false, message: "Trainer not found" });
-//       }
-//     }
-
-//    Object.assign(batch, updates);
-//     // Manual date check (the schema check only runs when endDate itself changes)
-//     if (batch.endDate <= batch.startDate) {
-//       return res.status(400).json({ success: false, message: "End date must be after start date" });
-//     }
-
-//     await batch.save(); // runs schema validators
-//     const updated = await populateBatch(Batch.findById(id));
-//     res.status(200).json({ success: true, data: updated });
-//   } catch (error) {
-//     handleError(error, res);
-//   }
-// };
 exports.updateBatch = async (req, res) => {
   try {
     const { id } = req.params;
@@ -228,7 +176,16 @@ exports.updateBatch = async (req, res) => {
 
     // 3. Apply the changes
     Object.assign(batch, updates);
-
+    const outside = await Attendance.exists({
+  batch: id,
+  $or: [{ date: { $lt: batch.startDate } }, { date: { $gt: batch.endDate } }],
+});
+if (outside) {
+  return res.status(409).json({
+    success: false,
+    message: "Attendance exists outside the new batch dates",
+  });
+}
     // 4. Date check (only when both dates are valid)
     const start = new Date(batch.startDate);
     const end = new Date(batch.endDate);
