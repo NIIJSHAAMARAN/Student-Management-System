@@ -83,6 +83,9 @@ exports.getBatches = async (req, res) => {
   try {
     const { course, trainer, status } = req.query;
     const filter = {};
+    if (req.user.role === "trainer") {
+      filter.trainer = req.user.id; // overrides any ?trainer= sent by the client
+   }
 
     if (course) {
       if (!mongoose.isValidObjectId(course)) {
@@ -126,6 +129,9 @@ exports.getBatchById = async (req, res) => {
     if (!batch) {
       return res.status(404).json({ success: false, message: "Batch not found" });
     }
+    if (req.user.role === "trainer" && batch.trainer?._id.toString() !== req.user.id) {
+  return res.status(403).json({ success: false, message: "Access denied. Not your batch." });
+}
     res.status(200).json({ success: true, data: batch });
   } catch (error) {
     handleError(error, res);

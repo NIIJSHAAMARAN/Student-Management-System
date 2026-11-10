@@ -31,17 +31,12 @@ const populateAttendance = (query) =>
 exports.markAttendance = async (req, res) => {
   try {
     const { batchId, date, records } = req.body;
-    if (day < start || day > end) {
-  return res.status(400).json({
-    success: false,
-    message: `Date must be between ${toDay(batch.startDate)} and ${toDay(batch.endDate)} (inclusive)`,
-  });
-}
+
     // 1. Validate input
     if (!mongoose.isValidObjectId(batchId)) {
       return res.status(400).json({ success: false, message: "Invalid batch ID" });
     }
-           
+
     const day = normalizeDate(date);
     if (!day) {
       return res.status(400).json({ success: false, message: "Date must be a real date in YYYY-MM-DD format" });
@@ -50,12 +45,6 @@ exports.markAttendance = async (req, res) => {
       return res.status(400).json({ success: false, message: "records must be a non-empty array" });
     }
 
-if (day < start || day > end) {
-  return res.status(400).json({
-    success: false,
-    message: `Date must be between ${toDay(batch.startDate)} and ${toDay(batch.endDate)} (inclusive)`,
-  });
-}
     const seen = new Set();
     for (const r of records) {
       if (!r || !mongoose.isValidObjectId(r.studentId)) {
@@ -80,10 +69,22 @@ if (day < start || day > end) {
     if (!(await canAccessBatch(req.user, batchId))) {
       return res.status(403).json({ success: false, message: "Access denied. Not your batch." });
     }
-    const start = normalizeDate(toDay(batch.startDate));
-const end = normalizeDate(toDay(batch.endDate));
-   
-    // 4. Every student must belong to this batch
+
+    // 4. Date must be within the batch start and end dates (inclusive)
+    if (day < normalizeDate(toDay(batch.startDate))) {
+      return res.status(400).json({
+        success: false,
+        message: `Attendance date cannot be before the batch start date (${toDay(batch.startDate)})`,
+      });
+    }
+    if (day > normalizeDate(toDay(batch.endDate))) {
+      return res.status(400).json({
+        success: false,
+        message: `Attendance date cannot be after the batch end date (${toDay(batch.endDate)})`,
+      });
+    }
+
+    // 5. Every student must belong to this batch
     const members = new Set(batch.students.map(String));
     const outsiders = [...seen].filter((id) => !members.has(id));
     if (outsiders.length > 0) {
@@ -93,21 +94,8 @@ const end = normalizeDate(toDay(batch.endDate));
         studentIds: outsiders,
       });
     }
-    if (day < normalizeDate(toDay(batch.startDate))) {
-  return res.status(400).json({
-    success: false,
-    message: `Attendance date cannot be before the batch start date (${toDay(batch.startDate)})`,
-  });
-}
 
-if (day > normalizeDate(toDay(batch.endDate))) {
-  return res.status(400).json({
-    success: false,
-    message: `Attendance date cannot be after the batch end date (${toDay(batch.endDate)})`,
-  });
-}
-
-    // 5. Reject records that already exist (use PUT to correct them)
+    // 6. Reject records that already exist (use PUT to correct them)
     const existing = await Attendance.find({
       batch: batchId,
       date: day,
@@ -120,10 +108,8 @@ if (day > normalizeDate(toDay(batch.endDate))) {
         studentIds: existing.map((e) => e.student),
       });
     }
-// if (error.code === 11000) {
-// return res.status(409).json({ success: false, message: "Attendance already marked for this student, batch and date" });
-// }
-    // 6. Save
+
+    // 7. Save
     const docs = records.map((r) => ({
       student: r.studentId,
       batch: batchId,

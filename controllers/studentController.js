@@ -113,7 +113,12 @@ exports.createStudent = async (req, res) => {
 exports.updateStudent = async (req, res) => {
   try {
     const { name, email } = req.body;
-
+       if (!req.body || Object.keys(req.body).length === 0 || (!name && !email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Request body cannot be empty. Provide name or email to update.",
+      });
+    }
     const student = await Student.findByIdAndUpdate(
       req.params.id,
       { name, email },
