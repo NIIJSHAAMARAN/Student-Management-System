@@ -1,5 +1,3 @@
-// The ONLY place where the report rule is written.
-// To change the policy (e.g. Late not counted as attended), edit it here.
 const summarize = (records) => {
   const counts = { present: 0, absent: 0, late: 0, leave: 0 };
 
@@ -10,7 +8,7 @@ const summarize = (records) => {
 
   const total = records.length;
   const attended = counts.present + counts.late;
-  const counted = total - counts.leave; // denominator: Leave excluded
+  const counted = total - counts.leave; 
 
   const attendancePercentage =
     counted > 0 ? Number(((attended / counted) * 100).toFixed(2)) : null;

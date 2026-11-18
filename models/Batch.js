@@ -18,8 +18,7 @@ const batchSchema = new mongoose.Schema(
     trainer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      // Make this required: true after the User model exists (Stage 8)
-    },
+      required:true    },
     startDate: {
       type: Date,
       required: [true, "Start date is required"],
@@ -29,8 +28,7 @@ const batchSchema = new mongoose.Schema(
       required: [true, "End date is required"],
       validate: {
         validator: function (value) {
-          // Works on create. See the note below for updates.
-          return !this.startDate || value > this.startDate;
+         return !this.startDate || value > this.startDate;
         },
         message: "End date must be after start date",
       },
